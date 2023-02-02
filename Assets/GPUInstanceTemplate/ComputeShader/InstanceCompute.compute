@@ -1,0 +1,15 @@
+#pragma kernel CSMin
+
+StructuredBuffer<float4x4> positionBuffer;
+AppendStructuredBuffer<float4x4> resultBuffer;
+
+int instanceCount;
+
+[numthreads(640,1,1)]
+void CSMin (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= instanceCount) return;
+    
+    float4x4 vertex = positionBuffer[id.x];
+    resultBuffer.Append(vertex);
+}
