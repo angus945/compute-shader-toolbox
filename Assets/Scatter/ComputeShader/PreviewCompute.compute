@@ -1,0 +1,18 @@
+#pragma kernel CSMain
+
+StructuredBuffer<float4x4> scatterBuffer;
+RWStructuredBuffer<float4x4> previewBuffer;
+float _UnitScale;
+
+[numthreads(640, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float4x4 localScale = 0;
+    localScale._m00 = _UnitScale;
+    localScale._m11 = _UnitScale;
+    localScale._m22 = _UnitScale;
+    localScale._m33 = 1;
+    
+    previewBuffer[id.x] = mul(scatterBuffer[id.x], localScale);
+}
