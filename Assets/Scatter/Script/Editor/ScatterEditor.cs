@@ -8,26 +8,13 @@ namespace SurfaceScatter
     {
         PointScatter scatter;
 
-        int kernel;
-        ComputeShader compute;
-        ComputeBuffer argsBuffer;
-        ComputeBuffer scatterBuffer;
-        ComputeBuffer previewBuffer;
-
         void OnEnable()
         {
             scatter = (PointScatter)target;
-
-            compute = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Scatter/ComputeShader/PreviewCompute.compute");
-            scatterBuffer = new ComputeBuffer(1000000, sizeof(float) * 4 * 4, ComputeBufferType.Structured);
-            previewBuffer = new ComputeBuffer(1000000, sizeof(float) * 4 * 4, ComputeBufferType.Structured);
-            argsBuffer = new ComputeBuffer(6, sizeof(uint), ComputeBufferType.IndirectArguments);
         }
         void OnDisable()
         {
-            scatterBuffer.Dispose();
-            previewBuffer.Dispose();
-            argsBuffer.Dispose();
+
         }
         public override void OnInspectorGUI()
         {
@@ -42,8 +29,6 @@ namespace SurfaceScatter
             {
                 scatter.LoadMeshTriangles();
                 scatter.ScatterOnSurface();
-
-                SetBufferDatas();
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -90,29 +75,6 @@ namespace SurfaceScatter
             GUILayout.Label($"Triangle: {triangleCount}, Generated Points: {pointCoundLength}");
         }
 
-        void SetBufferDatas()
-        {
-            Mesh mesh = scatter.preview.mesh;
-            Material material = scatter.preview.material;
-
-            scatterBuffer.SetData(scatter.pointCloudMatrix);
-            argsBuffer.SetData(new uint[6]
-            {
-                (uint)mesh.GetIndexCount(0),
-                (uint)scatter.pointCloudMatrix.Length,
-                (uint)mesh.GetIndexStart(0),
-                (uint)mesh.GetBaseVertex(0),
-                0,
-                0,
-            });
-
-            int kernel = compute.FindKernel("CSMain");
-            compute.SetBuffer(kernel, "scatterBuffer", scatterBuffer);
-            compute.SetBuffer(kernel, "previewBuffer", previewBuffer);
-
-            material.SetBuffer("transformBuffer", previewBuffer);
-        }
-
         void OnSceneGUI()
         {
             if (Application.isPlaying) return;
@@ -128,29 +90,34 @@ namespace SurfaceScatter
             {
                 TriangleData face = scatter.meshTriangles[i];
 
-                Handles.color = Color.green;
-                Handles.DrawLine(face.vertexA.pos, face.vertexB.pos);
-                Handles.DrawLine(face.vertexB.pos, face.vertexC.pos);
-                Handles.DrawLine(face.vertexC.pos, face.vertexA.pos);
+                if (scatter.preview.displayWireframe)
+                {
+                    Handles.color = Color.green;
+                    Handles.DrawLine(face.vertexA.pos, face.vertexB.pos);
+                    Handles.DrawLine(face.vertexB.pos, face.vertexC.pos);
+                    Handles.DrawLine(face.vertexC.pos, face.vertexA.pos);
+                }
 
-                Handles.color = Color.blue;
-                Handles.DrawLine(face.vertexA.pos, face.vertexA.pos + face.vertexA.normal);
-                Handles.DrawLine(face.vertexB.pos, face.vertexB.pos + face.vertexB.normal);
-                Handles.DrawLine(face.vertexC.pos, face.vertexC.pos + face.vertexC.normal);
+                if(scatter.preview.displayWireframeNormal)
+                {
+                    Handles.color = Color.blue;
+                    Handles.DrawLine(face.vertexA.pos, face.vertexA.pos + face.vertexA.normal);
+                    Handles.DrawLine(face.vertexB.pos, face.vertexB.pos + face.vertexB.normal);
+                    Handles.DrawLine(face.vertexC.pos, face.vertexC.pos + face.vertexC.normal);
+                }
             }
         }
         void DrawPointCloud()
         {
-            if (scatter.preview.displayInstance)
+            if (scatter.preview.displayPointCloud)
             {
-                Mesh mesh = scatter.preview.mesh;
-                Material material = scatter.preview.material;
-                Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 100);
+                for (int i = 0; i < scatter.pointCloud.Length; i++)
+                {
+                    PointData point = scatter.pointCloud[i];
 
-                compute.SetFloat("_UnitScale", scatter.preview.globalScale);
-
-                compute.Dispatch(kernel, (scatter.pointCloud.Length / 640 + 1), 1, 1);
-                Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
+                    Handles.color = Color.red;
+                    Handles.DrawWireCube(point.pos, Vector3.one * scatter.preview.pointSize);
+                }
             }
             if (scatter.preview.displayNormal)
             {
@@ -159,12 +126,9 @@ namespace SurfaceScatter
                     PointData point = scatter.pointCloud[i];
 
                     Handles.color = Color.blue;
-                    Handles.DrawLine(point.pos, point.pos + point.normal);
+                    Handles.DrawLine(point.pos, point.pos + point.normal * scatter.preview.normalLength);
                 }
             }
-
-
-
         }
     }
 

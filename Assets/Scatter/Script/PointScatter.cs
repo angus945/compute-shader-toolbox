@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,9 +27,18 @@ namespace SurfaceScatter
         public PointData ApplyMatrix(Matrix4x4 matrix)
         {
             this.pos = matrix.MultiplyPoint(this.pos);
-            this.normal = matrix.MultiplyPoint(this.pos).normalized;
+            this.normal = matrix.MultiplyPoint(this.normal).normalized;
 
             return this;
+        }
+        public Matrix4x4 GetTransformMatrix()
+        {
+            return Matrix4x4.TRS(pos, Quaternion.LookRotation(normal), Vector3.one);
+        }
+
+        public void OffsetByNormal(float expand)
+        {
+            this.pos += normal * expand;
         }
     }
 
@@ -67,13 +77,13 @@ namespace SurfaceScatter
                 bcValue = (1 - bcValue);
             }
 
-            Vector3 abNormal = Vector3.Lerp(vertexA.normal, vertexB.normal, acValue);
-            Vector3 acNormal = Vector3.Lerp(vertexA.normal, vertexC.normal, acValue);
-            Vector3 normal = (abNormal + acNormal) / 2;
-
             Vector3 abShift = Vector3.Lerp(Vector3.zero, vertexB.pos - vertexA.pos, acValue);
             Vector3 acShift = Vector3.Lerp(Vector3.zero, vertexC.pos - vertexA.pos, bcValue);
             Vector3 position = vertexA.pos + abShift + acShift;
+
+            Vector3 abNormalShift = Vector3.Lerp(Vector3.zero, vertexB.normal - vertexA.normal, acValue);
+            Vector3 acNormalShift = Vector3.Lerp(Vector3.zero, vertexC.normal - vertexA.normal, bcValue);
+            Vector3 normal = Vector3.Normalize(vertexA.normal + abNormalShift + acNormalShift);
 
             return new PointData(position, normal, Vector2.zero);
         }
@@ -91,17 +101,21 @@ namespace SurfaceScatter
     public struct ScatterOption
     {
         public float density;
+        public float expand;
         public bool fullRandom;
     }
 
     [System.Serializable]
     public struct PreviewOptions
     {
-        public bool displayInstance;
-        public Mesh mesh;
-        public Material material;
-        public float globalScale;
+        public bool displayWireframe;
+        public bool displayWireframeNormal;
+
+        public bool displayPointCloud;
+        public float pointSize;
+
         public bool displayNormal;
+        public float normalLength;
     }
 
     [System.Serializable]
@@ -197,8 +211,10 @@ namespace SurfaceScatter
                     }
 
                     PointData scatterPoint = face.LerpOnTriangle(acMapping, bcMapping);
+                    scatterPoint.OffsetByNormal(option.expand);
                     scatterPoints.Add(scatterPoint);
-                    transforms.Add(Matrix4x4.Translate(scatterPoint.pos));
+
+                    transforms.Add(scatterPoint.GetTransformMatrix());
                 }
             }
 
