@@ -127,7 +127,8 @@ namespace SurfaceScatter
 
         public TriangleData[] meshTriangles;
         public PointData[] pointCloud;
-        public Matrix4x4[] pointCloudMatrix;
+        public Matrix4x4[] pointCloudMatrics;
+        public Vector4[] pointCloudDirectionals;
 
         //public Vector
 
@@ -185,6 +186,7 @@ namespace SurfaceScatter
         {
             List<PointData> scatterPoints = new List<PointData>();
             List<Matrix4x4> transforms = new List<Matrix4x4>();
+            List<Vector4> directionals = new List<Vector4>();
 
             for (int faceIndex = 0; faceIndex < meshTriangles.Length; faceIndex++)
             {
@@ -212,14 +214,16 @@ namespace SurfaceScatter
 
                     PointData scatterPoint = face.LerpOnTriangle(acMapping, bcMapping);
                     scatterPoint.OffsetByNormal(option.expand);
-                    scatterPoints.Add(scatterPoint);
 
+                    scatterPoints.Add(scatterPoint);
                     transforms.Add(scatterPoint.GetTransformMatrix());
+                    directionals.Add(scatterPoint.normal);
                 }
             }
 
             pointCloud = scatterPoints.ToArray();
-            pointCloudMatrix = transforms.ToArray();
+            pointCloudMatrics = transforms.ToArray();
+            pointCloudDirectionals = directionals.ToArray();
         }     
     }
 }

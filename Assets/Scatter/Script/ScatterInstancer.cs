@@ -15,11 +15,17 @@ namespace SurfaceScatter
         ComputeBuffer argsBuffer;
         ComputeBuffer scatterBuffer;
         ComputeBuffer previewBuffer;
+        ComputeBuffer directionalBuffer;
+
+        int instanceCount;
 
         void OnEnable()
         {
-            scatterBuffer = new ComputeBuffer(1000000, sizeof(float) * 4 * 4, ComputeBufferType.Structured);
-            previewBuffer = new ComputeBuffer(1000000, sizeof(float) * 4 * 4, ComputeBufferType.Structured);
+            instanceCount = scatter.pointCloud.Length;
+
+            scatterBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 4 * 4, ComputeBufferType.Structured);
+            previewBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 4 * 4, ComputeBufferType.Structured);
+            directionalBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 4, ComputeBufferType.Structured);
             argsBuffer = new ComputeBuffer(6, sizeof(uint), ComputeBufferType.IndirectArguments);
 
             SetBufferDatas();
@@ -28,16 +34,19 @@ namespace SurfaceScatter
         {
             scatterBuffer.Dispose();
             previewBuffer.Dispose();
+            directionalBuffer.Dispose();
             argsBuffer.Dispose();
         }
 
         void SetBufferDatas()
         {
-            scatterBuffer.SetData(scatter.pointCloudMatrix);
+            scatterBuffer.SetData(scatter.pointCloudMatrics);
+            directionalBuffer.SetData(scatter.pointCloudDirectionals);
+
             argsBuffer.SetData(new uint[6]
             {
                 (uint)mesh.GetIndexCount(0),
-                (uint)scatter.pointCloudMatrix.Length,
+                (uint)scatter.pointCloudMatrics.Length,
                 (uint)mesh.GetIndexStart(0),
                 (uint)mesh.GetBaseVertex(0),
                 0,
@@ -49,6 +58,7 @@ namespace SurfaceScatter
             compute.SetBuffer(kernel, "previewBuffer", previewBuffer);
 
             material.SetBuffer("transformBuffer", previewBuffer);
+            material.SetBuffer("directionBuffer", directionalBuffer);
         }
 
         void Update()
