@@ -101,6 +101,14 @@ namespace SurfaceScatter
     public struct ScatterOption
     {
         public float density;
+
+        public bool faceNormal;
+        public Vector3 rotate;
+        public Vector3 scale;
+
+        //public float randomScale;
+        //public float randomRotate;
+
         public float expand;
         public bool fullRandom;
     }

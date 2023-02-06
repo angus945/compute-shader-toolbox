@@ -1,0 +1,44 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+// StructuredBuffer<float4>
+// RWStructuredBuffer<float4>
+int _CompareCount;
+int _CompareStart, _CompareOffset;
+// StructuredBuffer<float> sourceBuffer;
+RWStructuredBuffer<float> compareBuffer;
+
+// RWTexture2D<float4> Result;
+
+[numthreads(4, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= _CompareCount) return;
+
+    int compareStart = id.x * _CompareStart;
+    float minCompare_0 = compareBuffer[compareStart + _CompareOffset * 0];
+    float minCompare_1 = compareBuffer[compareStart + _CompareOffset * 1];
+    float minCompare_2 = compareBuffer[compareStart + _CompareOffset * 2];
+    float minCompare_3 = compareBuffer[compareStart + _CompareOffset * 3];
+
+    int checkOffset = _CompareOffset == 1 ? 0 : 1;
+    float maxCompare_0 = compareBuffer[compareStart + _CompareOffset * 0 + checkOffset];
+    float maxCompare_1 = compareBuffer[compareStart + _CompareOffset * 1 + checkOffset];
+    float maxCompare_2 = compareBuffer[compareStart + _CompareOffset * 2 + checkOffset];
+    float maxCompare_3 = compareBuffer[compareStart + _CompareOffset * 3 + checkOffset];
+
+    float minValue = minCompare_0;
+    minValue = min(minValue, minCompare_1);
+    minValue = min(minValue, minCompare_2);
+    minValue = min(minValue, minCompare_3);
+
+    float maxValue = maxCompare_0;
+    maxValue = max(maxValue, maxCompare_1);
+    maxValue = max(maxValue, maxCompare_2);
+    maxValue = max(maxValue, maxCompare_3);
+
+    compareBuffer[compareStart + 0] = minValue;
+    compareBuffer[compareStart + 1] = maxValue;
+}

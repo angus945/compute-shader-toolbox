@@ -1,0 +1,10 @@
+#pragma kernel CopyBuffer_1
+
+StructuredBuffer<float> sourceBuffer;
+RWStructuredBuffer<float> destinationBuffer;
+
+[numthreads(640, 1, 1)]
+void CopyBuffer_1 (uint3 id : SV_DispatchThreadID)
+{
+    destinationBuffer[id.x] = sourceBuffer[id.x];
+}
