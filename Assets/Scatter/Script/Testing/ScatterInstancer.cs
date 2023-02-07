@@ -7,6 +7,8 @@ namespace SurfaceScatter
         [SerializeField] PointScatter scatter;
         [SerializeField] ComputeShader compute;
 
+        public Matrix4x4[] checkTransforms;
+
         public Mesh mesh;
         public Material material;
         public float globalScale;
@@ -69,6 +71,9 @@ namespace SurfaceScatter
 
             compute.Dispatch(kernel, (scatter.pointCloud.Length / 640 + 1), 1, 1);
             Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
+
+            checkTransforms = new Matrix4x4[instanceCount];
+            previewBuffer.GetData(checkTransforms);
         }
     }
 

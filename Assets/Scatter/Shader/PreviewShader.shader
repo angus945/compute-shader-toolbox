@@ -62,7 +62,8 @@ Shader "Scatter/PreviewShader"
                 
                 v2f o;
                 o.vertex = mul(UNITY_MATRIX_VP, float4(worldPosition, 1.0f));
-                o.color = fixed4(_Color.rgb * dot(_WorldSpaceLightPos0, direction), 1);
+                // o.color = fixed4(_Color.rgb * dot(_WorldSpaceLightPos0, direction), 1);
+                o.color = fixed4(_Color.rgb, 1);
                 // o.color = fixed4(direction, 1);
                 return o;
             }

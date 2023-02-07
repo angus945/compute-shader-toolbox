@@ -1,5 +1,5 @@
 // Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel ScatterKernel
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
@@ -57,13 +57,13 @@ void GetTriangleVertex(int faceIndex, out float3 a, out float3 b, out float3 c)
     b = verticesBuffer[trianglesBuffer[faceIndex + 1]];
     c = verticesBuffer[trianglesBuffer[faceIndex + 2]];
 
-    a = mul(_TransformMatrix, a);
-    b = mul(_TransformMatrix, b);
-    c = mul(_TransformMatrix, c);
+    a = mul(_TransformMatrix, float4(a, 1)).xyz;
+    b = mul(_TransformMatrix, float4(b, 1)).xyz;
+    c = mul(_TransformMatrix, float4(c, 1)).xyz;
 }
 
 [numthreads(640, 1, 1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void ScatterKernel (uint3 id : SV_DispatchThreadID)
 {
     if(id.x >= _FaceCount) return;
 

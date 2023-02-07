@@ -4,7 +4,7 @@ using UnityEngine;
 namespace SurfaceScatter
 {
     [CustomEditor(typeof(PointScatter))]
-    public class ScatterEditor : Editor
+    public class PointScatterEditor : Editor
     {
         PointScatter scatter;
 
@@ -98,7 +98,7 @@ namespace SurfaceScatter
                     Handles.DrawLine(face.vertexC.pos, face.vertexA.pos);
                 }
 
-                if(scatter.preview.displayWireframeNormal)
+                if (scatter.preview.displayWireframeNormal)
                 {
                     Handles.color = Color.blue;
                     Handles.DrawLine(face.vertexA.pos, face.vertexA.pos + face.vertexA.normal);
@@ -131,5 +131,6 @@ namespace SurfaceScatter
             }
         }
     }
+
 
 }

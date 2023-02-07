@@ -1,10 +1,23 @@
-#pragma kernel CopyBuffer_1
+#pragma kernel CopyBuffer_int
 
-StructuredBuffer<float> sourceBuffer;
-RWStructuredBuffer<float> destinationBuffer;
+StructuredBuffer<int> sourceBuffer_int;
+RWStructuredBuffer<int> destinationBuffer_int;
 
 [numthreads(640, 1, 1)]
-void CopyBuffer_1 (uint3 id : SV_DispatchThreadID)
+void CopyBuffer_int (uint3 id : SV_DispatchThreadID)
 {
-    destinationBuffer[id.x] = sourceBuffer[id.x];
+    destinationBuffer_int[id.x] = sourceBuffer_int[id.x];
+}
+
+//---------------------------------
+
+#pragma kernel CopyBuffer_float
+
+StructuredBuffer<float> sourceBuffer_float;
+RWStructuredBuffer<float> destinationBuffer_float;
+
+[numthreads(640, 1, 1)]
+void CopyBuffer_float (uint3 id : SV_DispatchThreadID)
+{
+    destinationBuffer_float[id.x] = sourceBuffer_float[id.x];
 }

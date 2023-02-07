@@ -1,0 +1,51 @@
+#pragma kernel EncodeToRenderTexture
+#pragma kernel LoadFromRenderTexture
+
+RWStructuredBuffer<float3> scatterBuffer;
+RWTexture2D<float4> scatterRenderTexture;
+Texture2D<float4> scatterTexture;
+
+int _TextureSize;
+float3 _BoundMin, _BoundMax;
+
+uint CoordToIndex(uint3 id)
+{
+    return id.x * _TextureSize + id.y;
+}
+uint3 IndexToCoord(int index)
+{
+    return uint3(index / _TextureSize, fmod(index, _TextureSize), 1);
+}
+
+[numthreads(8, 8, 1)]
+void EncodeToRenderTexture (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= _TextureSize) return;
+    if(id.y >= _TextureSize) return;
+    
+    uint index = CoordToIndex(id);
+
+    float4 scatterValue = float4(scatterBuffer[index], 1);
+    scatterValue.xyz = (scatterValue.xyz - _BoundMin) / (_BoundMax - _BoundMin);
+    scatterValue.w = 1;
+
+    scatterRenderTexture[id.xy] = scatterValue;
+}
+
+[numthreads(8, 8, 1)]
+void LoadFromRenderTexture (uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= _TextureSize) return;
+    if(id.y >= _TextureSize) return;
+    
+    uint index = CoordToIndex(id);
+
+    float4 scatterValue = scatterTexture[id.xy];
+    float3 position = lerp(_BoundMin, _BoundMax, scatterValue.xyz);
+
+    scatterBuffer[index] = position;
+
+    // float v = index * 1.0 / (_TextureSize * _TextureSize);
+    // float3 check = abs(scatterBuffer[index].xyz) / 10;
+    // scatterTexture[id.xy] = float4(check, 1);
+}

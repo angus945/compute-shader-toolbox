@@ -11,13 +11,14 @@ public class ParallelCompareTest : MonoBehaviour
     [SerializeField] float[] datas;
     [SerializeField] float[] result;
 
+    ComputeBuffer sourceBuffer;
     ComputeBuffer compareBuffer;
-    //ComputeBuffer compareBuffer;
 
     public float min = 0, max = 0;
 
     void Start()
     {
+        sourceBuffer = new ComputeBuffer(count, sizeof(float), ComputeBufferType.Structured);
         compareBuffer = new ComputeBuffer(count, sizeof(float), ComputeBufferType.Structured);
 
         datas = new float[count];
@@ -29,36 +30,18 @@ public class ParallelCompareTest : MonoBehaviour
             max = Mathf.Max(max, datas[i]);
         }
 
-        compareBuffer.SetData(datas);
+        sourceBuffer.SetData(datas);
 
-        int kernel = compute.FindKernel("CSMain");
-        //compute.SetBuffer(kernel, "sourceBuffer", sourceBuffer);
-        compute.SetBuffer(kernel, "compareBuffer", compareBuffer);
+        CopyBuffer.Copy_Float(sourceBuffer, compareBuffer);
 
-        int start = 1, offset = 1;
-        int compareCount = 0;
-        while (count > 1)
-        {
-            count = count / 4;
-            start = start * 4;
+        ParallelCompare.CompareElements(compareBuffer);
 
-            compute.SetInt("_CompareCount", count);
-            compute.SetInt("_CompareStart", start);
-            compute.SetInt("_CompareOffset", offset);
-            compute.Dispatch(kernel, count / 4 + 1, 1, 1);
-
-            offset = offset * 4;
-            compareCount++;
-            Debug.Log(count);
-        }
-
-        Debug.Log(compareCount);
         compareBuffer.GetData(result);
     }
     void OnDestroy()
     {
-        //sourceBuffer.Release();
-        //compareBuffer.Release();
+        sourceBuffer.Release();
+        compareBuffer.Release();
     }
 
     void CompareByCSharp()
