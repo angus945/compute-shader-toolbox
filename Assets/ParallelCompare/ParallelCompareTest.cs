@@ -32,7 +32,7 @@ public class ParallelCompareTest : MonoBehaviour
 
         sourceBuffer.SetData(datas);
 
-        CopyBuffer.Copy_Float(sourceBuffer, compareBuffer);
+        BufferCopyer.Copy_Float(sourceBuffer, compareBuffer);
 
         ParallelCompare.CompareElements(compareBuffer);
 

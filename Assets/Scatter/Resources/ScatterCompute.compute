@@ -1,13 +1,23 @@
-// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel ScatterKernel
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-// RWTexture2D<float4> Result;
+struct Filter
+{
+    int type;
+    float3 v1;
+    float3 v2;
+    float intensity;
+};
+
 StructuredBuffer<int> trianglesBuffer;
 StructuredBuffer<float3> verticesBuffer;
+StructuredBuffer<float3> normalsBuffer;
 
 AppendStructuredBuffer<float3> scatterBuffer;
+AppendStructuredBuffer<float3> directionBuffer;
+AppendStructuredBuffer<float3> randomizeBuffer;
+
+int _FilterCount;
+StructuredBuffer<Filter> filtersBuffer;
 
 float4x4 _TransformMatrix;
 
@@ -21,7 +31,16 @@ float rnd1To1(float seed)
 }
 float2 rnd1To2(float seed)
 {
-    return float2(rnd1To1(seed), rnd1To1(seed + 1684.413));
+    float x = rnd1To1(seed);
+    float y = rnd1To1(x);
+    return float2(x, y);
+}
+float3 rnd1To3(float seed)
+{
+    float x = rnd1To1(seed);
+    float y = rnd1To1(x);
+    float z = rnd1To1(y);
+    return float3(x, y, z);
 }
 float rnd2To1(float2 seed)
 {
@@ -51,15 +70,68 @@ float triangleArea(float3 a, float3 b, float3 c)
     return (length(a - b) * length(a - c)) / 2;
 }
 
-void GetTriangleVertex(int faceIndex, out float3 a, out float3 b, out float3 c)
+void GetTriangleVertex(int faceIndex, out float3 pA, out float3 pB, out float3 pC)
 {
-    a = verticesBuffer[trianglesBuffer[faceIndex + 0]];
-    b = verticesBuffer[trianglesBuffer[faceIndex + 1]];
-    c = verticesBuffer[trianglesBuffer[faceIndex + 2]];
+    pA = verticesBuffer[trianglesBuffer[faceIndex + 0]];
+    pB = verticesBuffer[trianglesBuffer[faceIndex + 1]];
+    pC = verticesBuffer[trianglesBuffer[faceIndex + 2]];
 
-    a = mul(_TransformMatrix, float4(a, 1)).xyz;
-    b = mul(_TransformMatrix, float4(b, 1)).xyz;
-    c = mul(_TransformMatrix, float4(c, 1)).xyz;
+    pA = mul(_TransformMatrix, float4(pA, 1)).xyz;
+    pB = mul(_TransformMatrix, float4(pB, 1)).xyz;
+    pC = mul(_TransformMatrix, float4(pC, 1)).xyz;
+}
+
+void GetTriangleNormal(int faceIndex, out float3 nA, out float3 nB, out float3 nC)
+{
+    nA = normalsBuffer[trianglesBuffer[faceIndex + 0]];
+    nB = normalsBuffer[trianglesBuffer[faceIndex + 1]];
+    nC = normalsBuffer[trianglesBuffer[faceIndex + 2]];
+
+    float4x4 rotateMat = _TransformMatrix;
+    rotateMat._m03_m13_m23 = 0;
+
+    nA = mul(rotateMat, float4(nA, 1)).xyz;
+    nB = mul(rotateMat, float4(nB, 1)).xyz;
+    nC = mul(rotateMat, float4(nC, 1)).xyz;
+
+}
+
+bool planeClip(Filter filter, float3 position)
+{
+    float planeDistance = dot(filter.v1, position) - filter.intensity;
+    
+    return planeDistance < 0;
+}
+bool directionClamp(Filter filter, float3 direction)
+{
+    float dirAngle = dot(filter.v1, direction) - filter.intensity;
+
+    return dirAngle < 0;
+}
+bool scatterFilter(float3 position, float3 direction, float3 randomize)
+{
+    for(int i = 0; i < _FilterCount; i++)
+    {
+        Filter filter = filtersBuffer[i];
+
+        switch (filter.type)
+        {
+            case -1:
+                return false;
+            
+            case 0:
+                if(planeClip(filter, position)) return false;
+                break;
+
+            case 1:
+                if(directionClamp(filter, direction)) return false;
+                break;
+
+        }
+        // if(filter.type == 0) 
+    }
+    
+    return true;
 }
 
 [numthreads(640, 1, 1)]
@@ -72,14 +144,27 @@ void ScatterKernel (uint3 id : SV_DispatchThreadID)
     float3 vertA, vertB, vertC;
     GetTriangleVertex(faceID, vertA, vertB, vertC);
 
+    float3 normalA, normalB, normalC;
+    GetTriangleNormal(faceID, normalA, normalB, normalC);
+
     float area = triangleArea(vertA, vertB, vertC);
     int count = max(1, area * _Density);
     
     for(int i = 0; i < count; i++)
     {
-        float1 seed = (_Seed + i + faceID);
-        float3 position = triangleLerp(vertA, vertB, vertC, rnd1To2(seed));
-        scatterBuffer.Append(position);
+        float seed = (_Seed + i + faceID + 1);
+
+        float2 lerpValue = rnd1To2(seed);
+        float3 position = triangleLerp(vertA, vertB, vertC, lerpValue);
+        float3 direction = normalize(triangleLerp(normalA, normalB, normalC, lerpValue));
+        float3 randomize = rnd1To3(seed);
+
+        if(scatterFilter(position, direction, randomize))
+        {
+            scatterBuffer.Append(position);
+            directionBuffer.Append(direction);
+            randomizeBuffer.Append(randomize);
+        }
     }
 }
 

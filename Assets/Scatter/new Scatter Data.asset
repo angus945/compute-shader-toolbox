@@ -9,20 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96ec61b8bdefbd042a2b8ffbcb0979dc, type: 3}
+  m_Script: {fileID: 11500000, guid: 983bf37ea49b59a4bb3504e84a920cad, type: 3}
   m_Name: new Scatter Data
   m_EditorClassIdentifier: 
-  sampleMesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
-  position: {x: 0, y: 0, z: 0}
-  rotation: {x: -0, y: 0, z: 0}
-  localScale: {x: 5, y: 5, z: 5}
-  maxInstance: 16384
-  density: 50
-  seed: 483.61676
-  instanceCount: 1766
-  boundMin: {x: -2.5, y: -2.5, z: -1.5308084e-16}
-  boundMax: {x: 2.5, y: 2.5, z: 1.5308084e-16}
-  showWireframe: 0
-  showNormal: 0
-  showPointCloud: 0
-  showBound: 1
+  _maxScattered: 10000
+  _seed: 494
+  _density: 10
+  _filter:
+  - type: 1
+    v1: {x: 0, y: 1, z: 0}
+    v2: {x: 0, y: 0, z: 0}
+    intensity: 0.33

@@ -21,3 +21,16 @@ void CopyBuffer_float (uint3 id : SV_DispatchThreadID)
 {
     destinationBuffer_float[id.x] = sourceBuffer_float[id.x];
 }
+
+//---------------------------------
+
+#pragma kernel CopyBuffer_float3
+
+StructuredBuffer<float3> sourceBuffer_float3;
+RWStructuredBuffer<float3> destinationBuffer_float3;
+
+[numthreads(640, 1, 1)]
+void CopyBuffer_float3 (uint3 id : SV_DispatchThreadID)
+{
+    destinationBuffer_float3[id.x] = sourceBuffer_float3[id.x];
+}

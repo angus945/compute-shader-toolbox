@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public static class CopyBuffer
+public static class BufferCopyer
 {
 
     class Copyer
@@ -32,6 +32,7 @@ public static class CopyBuffer
     static ComputeShader compute;
     readonly static Copyer copyer_int = new Copyer("CopyBuffer_int", "sourceBuffer_int", "destinationBuffer_int");
     readonly static Copyer copyer_float = new Copyer("CopyBuffer_float", "sourceBuffer_float", "destinationBuffer_float");
+    readonly static Copyer copyer_float3 = new Copyer("CopyBuffer_float3", "sourceBuffer_float3", "destinationBuffer_float3");
 
     static void Init()
     {
@@ -52,5 +53,10 @@ public static class CopyBuffer
 
         copyer_float.CopyBuffer(compute, src, dst);
     }
+    public static void Copy_Float3(ComputeBuffer src, ComputeBuffer dst)
+    {
+        Init();
 
+        copyer_float3.CopyBuffer(compute, src, dst);
+    }
 }

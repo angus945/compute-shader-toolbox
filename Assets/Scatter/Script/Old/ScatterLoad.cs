@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ScatterLoad : MonoBehaviour
 {
-    [SerializeField] ScatterData scatterData;
+    [SerializeField] ScatterBaker scatterData;
     [SerializeField] Texture2D texture;
 
     public Vector3[] scatters;
