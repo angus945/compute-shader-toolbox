@@ -23,14 +23,21 @@ Shader "Scatter/PreviewShader"
 
             fixed4 _Color;
 
+            struct ScatterPoint
+            {
+                float4x4 transform;
+                float3 direction;
+                float3 randomize;
+            };
+
             #if SHADER_TARGET >= 45
-                StructuredBuffer<float4x4> transformBuffer;
-                StructuredBuffer<float4> directionBuffer;
+                StructuredBuffer<ScatterPoint> scatterBuffer;
             #endif
 
             struct appdata
             {
                 float4 vertex : POSITION;
+                float4 normal : NORMAL;
             };
 
             struct v2f
@@ -46,8 +53,8 @@ Shader "Scatter/PreviewShader"
             v2f vert (appdata v, uint instanceID : SV_INSTANCEID)
             {
                 #if SHADER_TARGET >= 45
-                    float4x4 transformMat = transformBuffer[instanceID];
-                    float3 direction = directionBuffer[instanceID].xyz;
+                    float4x4 transformMat = scatterBuffer[instanceID].transform;
+                    float3 direction = scatterBuffer[instanceID].direction;
                 #else
                     float4x4 transformMat = 0;
                     float3 direction = 0;
@@ -58,12 +65,11 @@ Shader "Scatter/PreviewShader"
                 float3 worldPosition = originPosition + localPosition;
 
                 float4 originVert = mul(UNITY_MATRIX_VP, float4(originPosition, 1.0f));
-
                 
                 v2f o;
                 o.vertex = mul(UNITY_MATRIX_VP, float4(worldPosition, 1.0f));
                 // o.color = fixed4(_Color.rgb * dot(_WorldSpaceLightPos0, direction), 1);
-                o.color = fixed4(_Color.rgb, 1);
+                o.color = fixed4(abs(v.normal.rgb), 1);
                 // o.color = fixed4(direction, 1);
                 return o;
             }

@@ -3,26 +3,35 @@ using UnityEngine;
 
 public static class ScatterVisualizer
 {
+    [System.Serializable]
+    public struct Options
+    {
+        public bool wireframe;
+        public bool normal;
+        public bool pointCloud;
+        public bool pointCloudDirection;
+    }
+
     readonly static Color wireframeColor = Color.green;
     readonly static Color normalColor = Color.blue;
     readonly static Color pointCloudColor = Color.red;
 
-    public static void DrawSampleTraget(MeshFilter[] sampleTargets, bool drawWireframe, bool drawNormal)
+    public static void DrawSampleTraget(MeshFilter[] sampleTargets, Options options)
     {
         for (int i = 0; i < sampleTargets.Length; i++)
         {
-            DrawSampleTraget(sampleTargets[i], drawWireframe, drawNormal);
+            DrawSampleTraget(sampleTargets[i], options);
         }
     }
-    public static void DrawSampleTraget(MeshFilter sampleTarget, bool drawWireframe, bool drawNormal)
+    public static void DrawSampleTraget(MeshFilter sampleTarget, Options options)
     {
         Mesh mesh = sampleTarget.sharedMesh;
         Matrix4x4 localToWorld = sampleTarget.transform.localToWorldMatrix;
 
-        DrawSampleTraget(mesh, localToWorld, drawWireframe, drawNormal);
+        DrawSampleTraget(mesh, localToWorld, options);
     }
 
-    public static void DrawSampleTraget(Mesh mesh, Matrix4x4 matrix, bool drawWireframe, bool drawNormal)
+    public static void DrawSampleTraget(Mesh mesh, Matrix4x4 matrix, Options options)
     {
         if (mesh == null) return;
 
@@ -44,7 +53,7 @@ public static class ScatterVisualizer
             Vector3 normal_1 = matrix.MultiplyVector(normals[triangle_1]).normalized;
             Vector3 normal_2 = matrix.MultiplyVector(normals[triangle_2]).normalized;
 
-            if (drawWireframe)
+            if (options.wireframe)
             {
                 Gizmos.color = wireframeColor;
                 Gizmos.DrawLine(vertex_0, vertex_1);
@@ -52,7 +61,7 @@ public static class ScatterVisualizer
                 Gizmos.DrawLine(vertex_2, vertex_0);
             }
 
-            if (drawNormal)
+            if (options.normal)
             {
                 Gizmos.color = normalColor;
                 Gizmos.DrawLine(vertex_0, vertex_0 + normal_0);
@@ -73,26 +82,31 @@ public static class ScatterVisualizer
 
     }
 
-    public static void DrawPointCloud(Vector3[] pointCloud, Vector3[] directions, Vector3[] randomize, int instanceCount, bool drawPointcloud, bool drawDirection)
+    public static void DrawPointCloud(ScatterPoint[] pointCloud, int instanceCount, Options options)
     {
         int count = Mathf.Min(pointCloud.Length, instanceCount);
 
         for (int i = 0; i < count; i++)
         {
-            Vector3 point = pointCloud[i];
-            Vector3 normal = directions[i];
-            Vector3 random = randomize[i];
+            Vector3 point = pointCloud[i].transform.GetPosition();
+            Vector3 normal = pointCloud[i].direction;
+            Vector3 random = pointCloud[i].randomize;
+            //Quaternion.eu
 
-            if (drawPointcloud)
+            if (options.pointCloud)
             {
                 Gizmos.color = new Color(random.x, random.y, random.z, 1);
                 Gizmos.DrawCube(point, Vector3.one * 0.05f);
             }
-            if(drawDirection)
+            if(options.pointCloudDirection)
             {
                 Gizmos.color = normalColor;
                 Gizmos.DrawRay(point, normal * 0.1f);
             }
+
+            //Vector3 direction = pointCloud[i].transform.MultiplyVector(Vector3.up);
+            //Gizmos.color = Color.yellow;
+            //Gizmos.DrawRay(point, direction * 0.1f);
         }
     }
 }
