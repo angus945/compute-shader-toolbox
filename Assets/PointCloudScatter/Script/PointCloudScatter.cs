@@ -94,15 +94,15 @@ public class PointCloudScatter
         //Transform
         compute.SetBool(_AlignDirectionNameID, data.alignDirection);
         compute.SetVector(_BaseOffsetNameID, data.baseOffset);
-        compute.SetVector(_BaseRotateNameID, data.baseRotate);
+        compute.SetVector(_BaseRotateNameID, data.baseRotate * Mathf.Deg2Rad);
         compute.SetVector(_BaseSizeNameID, data.baseSize);
-        compute.SetFloat(_BaseExtrudeNameID, data.baseExtrude);
+        compute.SetVector(_BaseExtrudeNameID, data.baseExtrude);
 
         //Randomize
         compute.SetVector(_RndOffsetNameID, data.rndOffset);
-        compute.SetVector(_RndRotateNameID, data.rndRotate);
+        compute.SetVector(_RndRotateNameID, data.rndRotate * Mathf.Deg2Rad);
         compute.SetVector(_RndScaleNameID, data.rndScale);
-        compute.SetFloat(_RndExtrudeNameID, data.rndExtrude);
+        compute.SetVector(_RndExtrudeNameID, data.rndExtrude);
         
         //Result
         compute.SetBuffer(kernel, scatterBufferNameID, buffer.pointCloudBuffer);

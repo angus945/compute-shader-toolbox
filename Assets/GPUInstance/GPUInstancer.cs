@@ -81,6 +81,10 @@ public class GPUInstancer
     {
         material.SetBuffer(name, buffer);
     }
+    public void CopyCount(ComputeBuffer buffer)
+    {
+        ComputeBuffer.CopyCount(buffer, argsBuffer, sizeof(uint));
+    }
 
     public void Render()
     {
@@ -89,7 +93,7 @@ public class GPUInstancer
 
     public void Release()
     {
-        //argsBuffer.Release();
+        argsBuffer.Release();
         //transformBuffer.Release();
         //argsBuffer.Release();
     }

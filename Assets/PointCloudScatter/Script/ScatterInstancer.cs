@@ -97,6 +97,7 @@ public class ScatterInstancer : MonoBehaviour
         scatter.ScatteringPoints();
         instanceCount = scatter.GetPointCloud(ref pointCloud);
 
+        instancer.CopyCount(scatter.pointCloudBuffer);
         instancer.Render();
     }
 

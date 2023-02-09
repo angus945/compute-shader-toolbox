@@ -1,6 +1,7 @@
 #pragma kernel ScatterKernel
 
 #include "Assets/Shader/Library/Random.cginc"
+#include "Assets/Shader/Library/Matrix.cginc"
 
 struct Filter
 {
@@ -39,13 +40,13 @@ bool _AlignDirection;
 float3 _BaseOffset;
 float3 _BaseRotate;
 float3 _BaseSize;
-float _BaseExtrude;
+float3 _BaseExtrude;
 
 //Randomize
 float3 _RndOffset;
 float3 _RndRotate;
 float3 _RndScale;
-float _RndExtrude;
+float3 _RndExtrude;
 
 //Result
 AppendStructuredBuffer<ScatterPoint> scatterBuffer;
@@ -93,97 +94,50 @@ void GetTriangleNormal(int faceIndex, out float3 nA, out float3 nB, out float3 n
 
 }
 
-// bool scatterFilter(ScatterPoint scatted)
-// {
-//     for(int i = 0; i < _FilterCount; i++)
-//     {
-//         Filter filter = filtersBuffer[i];
-//         float filteValue = 0;
+float3 GetPosition(float3 position, float3 random, float4x4 lookMat)
+{
+    float3 shift = mul(lookMat, _BaseExtrude);
+    float3 rndOffset = _RndOffset * random;
+    float3 rndShift = mul(lookMat, _RndExtrude * random);
+    return position + _BaseOffset + shift + rndOffset + rndShift;
+}
+float3 GetRotation(float3 random)
+{
+    return _BaseRotate + _RndRotate * random;
+}
+float3 GetScale(float3 random)
+{
+    return _BaseSize + _BaseSize * _RndScale * random;
+}
 
-//         switch (filter.type)
-//         {
-//             case 0:
-//                 filteValue = dot(filter.v1, scatted.position);
-//                 break;
-//             case 1:
-//                 filteValue = dot(filter.v1, scatted.direction);
-//                 break;
-//         }
+bool scatterFilter(ScatterPoint scatted)
+{
+    for(int i = 0; i < _FilterCount; i++)
+    {
+        Filter filter = filtersBuffer[i];
+        float filteValue = 0;
 
-//         float filteRnd = (scatted.randomize.x * filter.fade) - (filter.fade * 0.5);
-//         filteValue = filteValue - filter.filte + filteRnd;
+        switch (filter.type)
+        {
+            case 0:
+                float3 position = scatted.transform._m03_m13_m23;
+                filteValue = dot(filter.v1, position);
+                break;
+            case 1:
+                filteValue = dot(filter.v1, scatted.direction);
+                break;
+        }
 
-//         if(filteValue < 0) return false;
-//     }
+        float filteRnd = (scatted.randomize.x * filter.fade) - (filter.fade * 0.5);
+        filteValue = filteValue - filter.filte + filteRnd;
+
+        if(filteValue < 0) return false;
+    }
     
-//     return true;
-// }
-
-float4x4 DirectionMatrix(float3 direction, float3 left)
-{
-    float3 forwrad = cross(direction, -left);
-    float4x4 mat = 0;
-
-    mat[0] = float4(left.x, direction.x, forwrad.x, 0);
-    mat[1] = float4(left.y, direction.y, forwrad.y, 0);
-    mat[2] = float4(left.z, direction.z, forwrad.z, 0);
-    mat[3] = float4(0, 0, 0, 1);
-
-    return mat;
+    return true;
 }
-float4x4 RotateX(float rad)
-{
-    float4x4 m = 0;                                     
-    m[0] = float4(1, 0, 0, 0);
-    m[1] = float4(0, cos(rad), -sin(rad), 0);
-    m[2] = float4(0, sin(rad), cos(rad), 0);
-    m[3] = float4(0, 0, 0, 1);
-    return m;
-}
-float4x4 RotateY(float rad)
-{
-    float4x4 m = 0;
-    m[0] = float4(cos(rad), 0, sin(rad), 0);  
-    m[1] = float4(0, 1, 0, 0);  
-    m[2] = float4(-sin(rad), 0, cos(rad), 0);  
-    m[3] = float4(0, 0, 0, 1);                   
-    return m;
-}
-float4x4 RotateZ(float rad)
-{
-    float4x4 m = 0;
-    m[0] = float4(cos(rad), -sin(rad), 0, 0);  
-    m[1] = float4(sin(rad),  cos(rad), 0, 0);  
-    m[2] = float4(0, 0, 1, 0);  
-    m[3] = float4(0, 0, 0, 1);                       
-    return m;
-}
-float4x4 Rotate(float3 rad)
-{
-    return mul(mul(RotateY(rad.y) , RotateX(rad.x)) , RotateZ(rad.z));
-}
-float4x4 ScaleMatrix(float3 scale)
-{
-    float4x4 mat = 0;
 
-    mat[0] = float4(scale.x, 0, 0, 0);
-    mat[1] = float4(0, scale.y, 0, 0);
-    mat[2] = float4(0, 0, scale.z, 0);
-    mat[3] = float4(0, 0, 0, 1);
 
-    return mat;
-}
-float4x4 TranslateMatrix(float3 translate)
-{
-    float4x4 mat = 0;
-
-    mat[0] = float4(1, 0, 0, translate.x);
-    mat[1] = float4(0, 1, 0, translate.y);
-    mat[2] = float4(0, 0, 1, translate.z);
-    mat[3] = float4(0, 0, 0, 1);
-
-    return mat;
-}
 
 [numthreads(640, 1, 1)]
 void ScatterKernel (uint3 id : SV_DispatchThreadID)
@@ -213,24 +167,33 @@ void ScatterKernel (uint3 id : SV_DispatchThreadID)
 
         float3 left = normalize(vertA - vertB);
         float3 forwrad = cross(direction, left);
-
         float4x4 lookMat = DirectionMatrix(direction, normalize(vertA - vertB));
-        float4x4 rotMat = Rotate(_BaseRotate);
-        float4x4 scaleMat = ScaleMatrix(_BaseSize);
-        float4x4 translateMat = TranslateMatrix(position);
 
-        // float4x4 mat = mul(mul(translateMat, rotMat), scaleMat);
-        float4x4 mat = mul(mul(translateMat, mul(lookMat, rotMat)), scaleMat);
+        float3 pos = GetPosition(position, randomize, lookMat);
+        float3 rot = GetRotation(randomize);
+        float3 scale = GetScale(randomize);
+
+        float4x4 rotateMat = Rotate(rot);
+        float4x4 scaleMat = ScaleMatrix(scale);
+        float4x4 translateMat = TranslateMatrix(pos);
+
+
+        float4x4 mat;
+        if(_AlignDirection)
+        {
+            mat = TransformMul(translateMat, mul(lookMat, rotateMat), scaleMat);
+        }
+        else mat = TransformMul(translateMat, rotateMat, scaleMat);
         
         ScatterPoint scatted;
         scatted.transform = mat;
         scatted.direction = direction;
         scatted.randomize = randomize;
 
-        // if(scatterFilter(scatted))
-        // {
+        if(scatterFilter(scatted))
+        {
             scatterBuffer.Append(scatted);
-        // }
+        }
     }
 }
 
