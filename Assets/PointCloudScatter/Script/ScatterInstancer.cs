@@ -67,6 +67,7 @@ public class ScatterInstancer : MonoBehaviour
     [Header("Debug")]
     public int instanceCount;
     public ScatterVisualizer.Options options;
+    public bool instance;
     public ScatterPoint[] pointCloud;
 
     void Awake()
@@ -97,8 +98,11 @@ public class ScatterInstancer : MonoBehaviour
         scatter.ScatteringPoints();
         instanceCount = scatter.GetPointCloud(ref pointCloud);
 
-        instancer.CopyCount(scatter.pointCloudBuffer);
-        instancer.Render();
+        if(instance)
+        {
+            instancer.CopyCount(scatter.pointCloudBuffer);
+            instancer.Render();
+        }
     }
 
     void OnDisable()

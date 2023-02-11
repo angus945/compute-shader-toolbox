@@ -7,10 +7,12 @@ public class ScatterData : ScriptableObject
 {
     [SerializeField] int _maxScattered;
     [SerializeField] int _seed = 3;
-    [SerializeField] float _density;
+    [SerializeField] [Min(0.01f)] float _density;
+    [SerializeField] [Range(0,1)] float _noising;
     public int maxScattered { get => _maxScattered; }
     public int seed { get => _seed; }
     public float density { get => _density; }
+    public float noising { get => _noising; }
 
     [Header("Transform")]
     [SerializeField] bool _alignDirection;

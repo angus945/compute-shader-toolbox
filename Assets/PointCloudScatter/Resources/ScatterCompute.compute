@@ -3,15 +3,10 @@
 #include "Assets/Shader/Library/Random.cginc"
 #include "Assets/Shader/Library/Matrix.cginc"
 
-struct Filter
-{
-    int type;
-    float3 v1;
-    float3 v2;
-
-    float fade;
-    float filte;
-};
+#include "ScatterTarget.cginc"
+#include "ScatterSampler.cginc"
+#include "ScatterTransform.cginc"
+#include "ScatterFilter.cginc"
 
 struct ScatterPoint
 {
@@ -20,180 +15,38 @@ struct ScatterPoint
     float3 randomize;
 };
 
-//Sample Target
-StructuredBuffer<int> trianglesBuffer;
-StructuredBuffer<float3> verticesBuffer;
-StructuredBuffer<float3> normalsBuffer;
-
-//Instancing
-int _FaceCount;
-float _Seed;
-float _Density;
-float4x4 _LocalToWorldMat;
-
-//Filtering
-int _FilterCount;
-StructuredBuffer<Filter> filtersBuffer;
-
-//Transform
-bool _AlignDirection;
-float3 _BaseOffset;
-float3 _BaseRotate;
-float3 _BaseSize;
-float3 _BaseExtrude;
-
-//Randomize
-float3 _RndOffset;
-float3 _RndRotate;
-float3 _RndScale;
-float3 _RndExtrude;
-
 //Result
 AppendStructuredBuffer<ScatterPoint> scatterBuffer;
 
-float3 triangleLerp(float3 a, float3 b, float3 c, float2 t)
-{
-    if (t.x + t.y > 1)
-    {
-        t.x = (1 - t.x);
-        t.y = (1 - t.y);
-    }
-    
-    float3 abShift = lerp(0, b - a, t.x);
-    float3 acShift = lerp(0, c - a, t.y);
-    return a + abShift + acShift;
-}
-float triangleArea(float3 a, float3 b, float3 c)
-{
-    return (length(a - b) * length(a - c)) / 2;
-}
-
-void GetTriangleVertex(int faceIndex, out float3 pA, out float3 pB, out float3 pC)
-{
-    pA = verticesBuffer[trianglesBuffer[faceIndex + 0]];
-    pB = verticesBuffer[trianglesBuffer[faceIndex + 1]];
-    pC = verticesBuffer[trianglesBuffer[faceIndex + 2]];
-
-    pA = mul(_LocalToWorldMat, float4(pA, 1)).xyz;
-    pB = mul(_LocalToWorldMat, float4(pB, 1)).xyz;
-    pC = mul(_LocalToWorldMat, float4(pC, 1)).xyz;
-}
-
-void GetTriangleNormal(int faceIndex, out float3 nA, out float3 nB, out float3 nC)
-{
-    nA = normalsBuffer[trianglesBuffer[faceIndex + 0]];
-    nB = normalsBuffer[trianglesBuffer[faceIndex + 1]];
-    nC = normalsBuffer[trianglesBuffer[faceIndex + 2]];
-
-    float4x4 rotateMat = _LocalToWorldMat;
-    rotateMat._m03_m13_m23 = 0;
-
-    nA = mul(rotateMat, float4(nA, 1)).xyz;
-    nB = mul(rotateMat, float4(nB, 1)).xyz;
-    nC = mul(rotateMat, float4(nC, 1)).xyz;
-
-}
-
-float3 GetPosition(float3 position, float3 random, float4x4 lookMat)
-{
-    float3 shift = mul(lookMat, _BaseExtrude);
-    float3 rndOffset = _RndOffset * random;
-    float3 rndShift = mul(lookMat, _RndExtrude * random);
-    return position + _BaseOffset + shift + rndOffset + rndShift;
-}
-float3 GetRotation(float3 random)
-{
-    return _BaseRotate + _RndRotate * random;
-}
-float3 GetScale(float3 random)
-{
-    return _BaseSize + _BaseSize * _RndScale * random;
-}
-
-bool scatterFilter(ScatterPoint scatted)
-{
-    for(int i = 0; i < _FilterCount; i++)
-    {
-        Filter filter = filtersBuffer[i];
-        float filteValue = 0;
-
-        switch (filter.type)
-        {
-            case 0:
-                float3 position = scatted.transform._m03_m13_m23;
-                filteValue = dot(filter.v1, position);
-                break;
-            case 1:
-                filteValue = dot(filter.v1, scatted.direction);
-                break;
-        }
-
-        float filteRnd = (scatted.randomize.x * filter.fade) - (filter.fade * 0.5);
-        filteValue = filteValue - filter.filte + filteRnd;
-
-        if(filteValue < 0) return false;
-    }
-    
-    return true;
-}
-
-
-
-[numthreads(640, 1, 1)]
+[numthreads(64, 1, 1)]
 void ScatterKernel (uint3 id : SV_DispatchThreadID)
 {
     if(id.x >= _FaceCount) return;
 
-    int faceID = id.x * 3;
+    SampleTarget target = GetSurface(id.x); 
+    SampleData data = GetSampleData(id.x, target);
 
-    float3 vertA, vertB, vertC;
-    GetTriangleVertex(faceID, vertA, vertB, vertC);
-
-    float3 normalA, normalB, normalC;
-    GetTriangleNormal(faceID, normalA, normalB, normalC);
-
-    float area = triangleArea(vertA, vertB, vertC);
-    int count = max(1, area * _Density);
-    
-    for(int i = 0; i < count; i++)
+    for(int i = 0; i < data.count; i++)
     {
-        float seed = (_Seed + i + faceID + 1);
+        SampleValue value = GetSampleValue(i, data);
 
-        float2 lerpValue = rnd1To2(seed);
+        if(value.mapping.x + value.mapping.y >= 1) continue;
 
-        float3 position = triangleLerp(vertA, vertB, vertC, lerpValue);
-        float3 direction = normalize(triangleLerp(normalA, normalB, normalC, lerpValue));
-        float3 randomize = rnd1To3(seed);
+        SampleResult result = GetSampleResult(value, target);
 
-        float3 left = normalize(vertA - vertB);
-        float3 forwrad = cross(direction, left);
-        float4x4 lookMat = DirectionMatrix(direction, normalize(vertA - vertB));
+        ApplyTransform(result);
 
-        float3 pos = GetPosition(position, randomize, lookMat);
-        float3 rot = GetRotation(randomize);
-        float3 scale = GetScale(randomize);
-
-        float4x4 rotateMat = Rotate(rot);
-        float4x4 scaleMat = ScaleMatrix(scale);
-        float4x4 translateMat = TranslateMatrix(pos);
-
-
-        float4x4 mat;
-        if(_AlignDirection)
+        if(!scatterFilter(result))
         {
-            mat = TransformMul(translateMat, mul(lookMat, rotateMat), scaleMat);
+            continue;
         }
-        else mat = TransformMul(translateMat, rotateMat, scaleMat);
         
         ScatterPoint scatted;
-        scatted.transform = mat;
-        scatted.direction = direction;
-        scatted.randomize = randomize;
+        scatted.transform = GetMatrix(result);
+        scatted.direction = result.direction;
+        scatted.randomize = result.randomize;
 
-        if(scatterFilter(scatted))
-        {
-            scatterBuffer.Append(scatted);
-        }
+        scatterBuffer.Append(scatted);
     }
 }
 

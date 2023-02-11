@@ -8,7 +8,7 @@ public struct PointCloudFilter
         get => sizeof(int) + sizeof(float) * 3 + sizeof(float) * 3 + sizeof(float) * 2; 
     }
 
-    [Min(0)] public int type;
+    [Min(-1)] public int type;
     public Vector3 v1;
     public Vector3 v2;
 
@@ -30,7 +30,7 @@ public class PointCloudScatter
 {
     const string shaderPath = "ScatterCompute";
     const string kernelName = "ScatterKernel";
-    const int numthread = 640;
+    const int numthread = 64;
 
     static int triangleBufferNameID = Shader.PropertyToID("trianglesBuffer"),
                verticesBufferNameID = Shader.PropertyToID("verticesBuffer"),
@@ -39,6 +39,7 @@ public class PointCloudScatter
     static int _FaceCoundNameID = Shader.PropertyToID("_FaceCount"),
                _SeedNameID = Shader.PropertyToID("_Seed"),
                _DensityNameID = Shader.PropertyToID("_Density"),
+               _NoisingNameID = Shader.PropertyToID("_Noising"),
                _LocalToWorldMatNameID = Shader.PropertyToID("_LocalToWorldMat");
 
     static int filterCountNameID = Shader.PropertyToID("_FilterCount"),
@@ -76,12 +77,14 @@ public class PointCloudScatter
         compute.SetInt(_FaceCoundNameID, faceCount);
         compute.SetFloat(_SeedNameID, data.seed);
         compute.SetFloat(_DensityNameID, data.density);
-        compute.SetMatrix(_LocalToWorldMatNameID, mesh.localToWorld);
+        compute.SetFloat(_NoisingNameID, data.noising);
 
         //Mesh
         compute.SetBuffer(kernel, triangleBufferNameID, mesh.trianglesBuffer);
         compute.SetBuffer(kernel, verticesBufferNameID, mesh.verticesBuffer);
         compute.SetBuffer(kernel, normalBufferNameID, mesh.normalsBuffer);
+        compute.SetMatrix(_LocalToWorldMatNameID, mesh.localToWorld);
+        //Debug.LogError(mesh.localToWorld);
 
         //Filtering
         if(filter.activeFilter)

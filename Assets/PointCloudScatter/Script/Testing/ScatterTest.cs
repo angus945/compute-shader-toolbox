@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using SurfaceScatter;
 
+[ExecuteInEditMode]
 public class ScatterTest : MonoBehaviour
 {
     [System.Serializable]
@@ -81,15 +82,14 @@ public class ScatterTest : MonoBehaviour
     public bool wireframe;
 
     //[Header("Process")]
-    //[SerializeField] Scatter scatter;
+    [SerializeField] PointScatter scatter;
 
-    void Start()
+    void OnEnable()
     {
-        //processingFaces = applyTransform ? Scatter. BindFaces(surfaceMesh, transform.localToWorldMatrix) : BindFaces(surfaceMesh, null);
-        //scatterPoints = ScatterOnSurface(processingFaces, density, randomScatter);
+        scatter.LoadMeshTriangles();
+        scatter.ScatterOnSurface();
     }
 
-    //Gizmos
     //void OnDrawGizmos()
     //{
     //    DrawWireframe();
@@ -99,7 +99,7 @@ public class ScatterTest : MonoBehaviour
     //{
     //    if (Application.isPlaying) return;
 
-    //    processingFaces = applyTransform ? BindFaces(surfaceMesh, transform.localToWorldMatrix) : BindFaces(surfaceMesh, null);
+    //    scatter.LoadMeshTriangles();
 
     //    for (int i = 0; i < processingFaces.Length; i++)
     //    {
