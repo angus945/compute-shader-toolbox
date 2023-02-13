@@ -121,6 +121,7 @@ public class PointCloudScatter
     MeshBuffer[] meshBuffers;
     FilterBuffer filterBuffer;
     ScatterBuffer scatterBuffer;
+
     public ComputeBuffer pointCloudBuffer { get => scatterBuffer.pointCloudBuffer; }
     public void CreateBuffers(MeshFilter[] sampleTargets, ScatterData scatterData)
     {
@@ -161,6 +162,10 @@ public class PointCloudScatter
     {
         scatterBuffer.GetDatas(ref pointCloud);
 
+        return scatterBuffer.count;
+    }
+    public int GetScatterAmount()
+    {
         return scatterBuffer.count;
     }
     public void ReleaseBuffers()

@@ -95,7 +95,9 @@ public static class ScatterVisualizer
 
             if (options.pointCloud)
             {
-                Gizmos.color = new Color(random.x, random.y, random.z, 1);
+                //Gizmos.color = new Color(random.x, random.y, random.z, 1);
+                //Gizmos.DrawCube(point, Vector3.one * 0.05f);
+                Gizmos.color = Color.red;
                 Gizmos.DrawCube(point, Vector3.one * 0.05f);
             }
             if(options.pointCloudDirection)

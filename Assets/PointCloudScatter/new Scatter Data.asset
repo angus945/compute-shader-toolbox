@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxScattered: 10000
   _seed: 24
-  _density: 10.11
+  _density: 21.53
   _noising: 1
   _alignDirection: 1
   _baseOffset: {x: 0, y: 0, z: 0}
@@ -30,4 +30,4 @@ MonoBehaviour:
     v1: {x: 0, y: 1, z: 0}
     v2: {x: 0, y: 0, z: 0}
     fade: 0
-    filte: 0.48
+    filte: -0.06
