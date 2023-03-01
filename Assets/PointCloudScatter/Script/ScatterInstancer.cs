@@ -111,6 +111,13 @@ public class ScatterInstancer : MonoBehaviour
         instancer.Release();
     }
 
+    [ContextMenu("Reload")]
+    void Reload()
+    {
+        OnDisable();
+        OnEnable();
+    }
+
     //Debug
     void OnDrawGizmos()
     {

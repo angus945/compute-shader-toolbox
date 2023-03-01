@@ -31,6 +31,7 @@ void ScatterKernel (uint3 id : SV_DispatchThreadID)
         SampleValue value = GetSampleValue(i, data);
 
         if(value.mapping.x + value.mapping.y >= 1) continue;
+        if(value.mapping.x < 0 || value.mapping.y < 0) continue;
 
         SampleResult result = GetSampleResult(value, target);
 

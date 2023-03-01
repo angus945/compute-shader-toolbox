@@ -37,7 +37,11 @@ SampleData GetSampleData(int index, SampleTarget target)
 {
     SampleData data;
     data.index = index;
-    data.count = max(1, target.area * _Density);
+
+    float last = floor(target.area * (index - 1) * _Density);
+    float current = floor(target.area * index * _Density);
+    data.count = max(current - last, target.area * _Density);
+    
     data.width = sqrt(data.count);
     data.spacing = (1.0 / data.width);
 
@@ -52,13 +56,13 @@ SampleValue GetSampleValue(int index, SampleData data)
     value.mapping.x = (index / data.width) / data.width;
     value.mapping.y = (fmod(index, data.width)) / data.width;
 
-    value.mapping += (1.0 / data.width / 1.9);
-    value.mapping += lerp(-data.spacing, data.spacing, rnd1To2(value.seed)) * _Noising * 0.5;
+    // value.mapping += (1.0 / data.width);
+    value.mapping += (rnd1To2(value.seed) - 0.5) * _Noising;
 
-    if(value.mapping.x + value.mapping.y >= 1) 
-    {
-        // value.mapping = 1 - value.mapping;
-    }
+    // if(value.mapping.x + value.mapping.y >= 1) 
+    // {
+    //     // value.mapping = 1 - value.mapping;
+    // }
 
     return value; 
 }
