@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 983bf37ea49b59a4bb3504e84a920cad, type: 3}
+  m_Name: Plateau Scatter
+  m_EditorClassIdentifier: 
+  _maxScattered: 100000
+  _seed: 34
+  _density: 8.9
+  _noising: 1
+  _alignDirection: 1
+  _baseOffset: {x: 0, y: 0, z: 0}
+  _baseRotate: {x: 0, y: 0, z: 0}
+  _baseSize: {x: 0.5, y: 0.5, z: 0.5}
+  _baseExtrude: {x: 0, y: 0, z: 0}
+  _rndOffset: {x: 0, y: 0, z: 0}
+  _rndRotate: {x: 20, y: 20, z: 20}
+  _rndScale: {x: 0, y: 0, z: 0}
+  _rndExtrude: {x: 0, y: 0.1, z: 0}
+  _filter:
+  - type: 0
+    v1: {x: 0, y: 1, z: 0}
+    v2: {x: 0, y: 0, z: 0}
+    fade: 7.92
+    filte: 8.72
+  - type: 1
+    v1: {x: 0, y: 1, z: 0}
+    v2: {x: 0, y: 0, z: 0}
+    fade: 0
+    filte: 0.66

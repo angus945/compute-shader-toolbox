@@ -38,10 +38,10 @@ SampleTarget GetSurface(int index)
     float3 normalC = mul(_LocalToWorldMat, float4(normalsBuffer[indexC], 0)).xyz;
 
     float rectArea = length(cross(vertexA - vertexB, vertexA - vertexC));
-    float width = length(vertexA - vertexB);
-    float height = rectArea / width;
-    float wRatio = width / (height + width);
-    float hRatio = height / (height + width);
+    // float width = length(vertexA - vertexB);
+    // float height = rectArea / width;
+    // float wRatio = width / (height + width);
+    // float hRatio = height / (height + width);
 
     SampleTarget tri;
     tri.vertexA = vertexA;

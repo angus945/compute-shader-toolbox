@@ -68,7 +68,7 @@ public class ScatterInstancer : MonoBehaviour
     public int instanceCount;
     public ScatterVisualizer.Options options;
     public bool instance;
-    public ScatterPoint[] pointCloud;
+    ScatterPoint[] pointCloud;
 
     void Awake()
     {

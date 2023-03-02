@@ -38,8 +38,8 @@ SampleData GetSampleData(int index, SampleTarget target)
     SampleData data;
     data.index = index;
 
-    float last = floor(target.area * (index - 1) * _Density);
-    float current = floor(target.area * index * _Density);
+    float last = floor(target.area * (_Seed + index - 1) * _Density);
+    float current = floor(target.area * (_Seed + index) * _Density);
     data.count = max(current - last, target.area * _Density);
     
     data.width = sqrt(data.count);
@@ -56,7 +56,7 @@ SampleValue GetSampleValue(int index, SampleData data)
     value.mapping.x = (index / data.width) / data.width;
     value.mapping.y = (fmod(index, data.width)) / data.width;
 
-    // value.mapping += (1.0 / data.width);
+    value.mapping += 0.5 / data.count / 2;
     value.mapping += (rnd1To2(value.seed) - 0.5) * _Noising;
 
     // if(value.mapping.x + value.mapping.y >= 1) 
