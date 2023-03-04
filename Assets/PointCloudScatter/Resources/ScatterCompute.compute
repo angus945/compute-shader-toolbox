@@ -37,7 +37,7 @@ void ScatterKernel (uint3 id : SV_DispatchThreadID)
 
         ApplyTransform(result);
 
-        if(!scatterFilter(result))
+        if(!ScatterFilter(result))
         {
             continue;
         }

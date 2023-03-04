@@ -16,7 +16,7 @@ struct Filter
 int _FilterCount;
 StructuredBuffer<Filter> filtersBuffer;
 
-bool scatterFilter(SampleResult result)
+bool ScatterFilter(SampleResult result)
 {
     for(int i = 0; i < _FilterCount; i++)
     {

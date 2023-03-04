@@ -40,7 +40,7 @@ SampleData GetSampleData(int index, SampleTarget target)
 
     float last = floor(target.area * (_Seed + index - 1) * _Density);
     float current = floor(target.area * (_Seed + index) * _Density);
-    data.count = max(current - last, target.area * _Density);
+    data.count = (current - last) + (target.area * _Density);
     
     data.width = sqrt(data.count);
     data.spacing = (1.0 / data.width);
@@ -51,7 +51,7 @@ SampleData GetSampleData(int index, SampleTarget target)
 SampleValue GetSampleValue(int index, SampleData data)
 {
     SampleValue value;
-    value.seed = (_Seed + index + data.index + 1);
+    value.seed = index + (data.index * 1000) + _Seed;
     
     value.mapping.x = (index / data.width) / data.width;
     value.mapping.y = (fmod(index, data.width)) / data.width;
