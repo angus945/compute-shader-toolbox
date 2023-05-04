@@ -1,0 +1,47 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+// #pragma kernel KernelCalcNormals
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+ByteAddressBuffer sourceBuffer;
+RWByteAddressBuffer vertexBuffer;
+
+RWStructuredBuffer<float3> checkVertexBuffer;
+RWStructuredBuffer<float3> checkNormalBuffer;
+
+int _BufferStride;
+int _VertexCount;
+float4x4 _LocalToWorldMatrix;
+float4x4 _WorldToLocalMatrix;
+
+uniform float4 _SDFSphere;
+uniform int _SDFDirection;
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // int idx = id.x;
+    if(id.x >= _VertexCount) return;
+
+    uint3 rawVertex = sourceBuffer.Load3(id.x * _BufferStride);
+    float3 vertex = asfloat(rawVertex);
+
+    uint3 rawNormal = sourceBuffer.Load3(id.x * _BufferStride + 12);
+    float3 normal = asfloat(rawNormal);
+
+    float3 objectPosition = mul(_LocalToWorldMatrix, float4(0, 0, 0, 1)).xyz;
+    float3 worldPosition = mul(_LocalToWorldMatrix, float4(vertex, 1)).xyz;
+
+    float distance = length(worldPosition - _SDFSphere.xyz) - _SDFSphere.w;
+    distance = max(-distance, 0);
+
+    float3 direction = normalize(worldPosition - _SDFSphere.xyz);
+    worldPosition += direction * distance;
+
+    vertex = mul(_WorldToLocalMatrix, float4(worldPosition, 1));
+    normal = lerp(normal, direction, distance);
+    
+    vertexBuffer.Store3(id.x * _BufferStride, asuint(vertex));
+    vertexBuffer.Store3(id.x * _BufferStride + 12, asuint(normal));
+}
